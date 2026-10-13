@@ -1,0 +1,43 @@
+name: Selenium Cucumber tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run browser tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run tests
+        run: mvn --batch-mode test -Dheadless=true
+
+      - name: Generate Allure HTML report
+        if: always()
+        run: mvn --batch-mode allure:report
+
+      - name: Upload Allure results and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-${{ github.run_number }}
+          path: |
+            target/allure-results/
+            target/site/allure-maven-plugin/
+          if-no-files-found: warn
+          retention-days: 14
